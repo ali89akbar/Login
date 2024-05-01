@@ -17,6 +17,8 @@ app.get('/',(req,res)=>{
 app.use("/auth",require("./routes/jwtAuth"))
 
 app.use("/dashboard",require("./routes/dashboard"))
+
+
 app.listen(PORT,()=>{
     console.log("App is Running")
 })

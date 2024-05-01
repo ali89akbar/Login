@@ -8,38 +8,64 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
 
-router.post("/register",validinfo ,async (req, res) => {
-    try {
-        const { name, email, password } = req.body
+router.post("/register", validinfo, async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      companyName,
+      owner,
+      streetAddress,
+      state,
+      city,
+      zipCode,
+      country,
+      phone_no,
+      company_description,
+    } = req.body;
 
-        const user = await pool.query("SELECT * FROM Company WHERE email = $1", [email])
-        if (user.rows.length !== 0) {
-            return res.status(401).send("User Already Exists")
-        }
-
-        const saltRound = 10;
-        const salt = await bcrypt.genSalt(saltRound)
-        const bcryptpassword = await bcrypt.hash(password, salt)
-
-        const newUser = await pool.query("INSERT INTO Company (name, email, password) VALUES ($1, $2, $3) RETURNING id", [name, email, bcryptpassword])
-        
-        if (newUser.rows.length === 0) {
-            return res.status(500).send("Failed to register user")
-        }
-
-        const userId = newUser.rows[0].id;
-        const token = jwtGenerator(userId);
-        
-        console.log("User registered:", { id: userId, name, email });
-        console.log("Generated token:", token);
-
-        res.json({ token })
-
-    } catch (error) {
-        console.error(error)
-        res.status(500).send("Server Error");
+    const user = await pool.query("SELECT * FROM Company WHERE email = $1", [email]);
+    if (user.rows.length !== 0) {
+      return res.status(401).send("User Already Exists");
     }
-})
+
+    const saltRound = 10;
+    const salt = await bcrypt.genSalt(saltRound);
+    const bcryptpassword = await bcrypt.hash(password, salt);
+
+    const newUser = await pool.query(
+      "INSERT INTO Company (email, password, company_name, owner, street_address, state, city, zip_code, country, phone_no, company_description) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+      [
+        email,
+        bcryptpassword,
+        companyName,
+        owner,
+        streetAddress,
+        state,
+        city,
+        zipCode,
+        country,
+        phone_no,
+        company_description,
+      ]
+    );
+    if (newUser.rows.length === 0) {
+      return res.status(500).send("Failed to register user");
+    }
+
+    const userId = newUser.rows[0].id;
+    const token = jwtGenerator(userId);
+
+    console.log("User registered:", { id: userId, owner, email });
+    console.log("Generated token:", token);
+
+    res.json({ token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server Error");
+  }
+});
+
 
 router.post("/login",validinfo,async(req,res)=>{
     try {
